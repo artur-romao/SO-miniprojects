@@ -58,6 +58,8 @@ for time = 1:10
     all_best_solutions(time) = best_solution_SP;
     execution_time = execution_time + elapsedTime;
 
+    best_solution
+
     % save the best solution with the minimum avg shortest path
     if best_solution_SP < min_best_solution_SP
         min_best_solution = best_solution;
@@ -168,4 +170,3 @@ end
 function [value, max_sp] = calc_avgSP(G, solution) 
     [value, max_sp] = AverageSP_v2(G,solution);
 end
-

@@ -4,7 +4,7 @@
 c_max = 1000;
 n_servers = 10;
 q = 0.1;
-P_size = 15;
+P_size = 100;
 
 % load data
 nodes   = load('Nodes2.txt');
@@ -62,6 +62,10 @@ for time = 1:10
     [best_solution, best_solution_SP] = get_best_solution(G, current_population);   % get the best solution between all solutions that are in the final population
     all_best_solutions(time) = best_solution_SP;    % save the avg shortest path of the best solution found
 
+    if best_solution_SP == -1
+        best_solution
+    end
+
     execution_time = execution_time + toc;
 
     % save the best solution with the minimum avg shortest path
@@ -104,8 +108,8 @@ function [P] = get_population(G, P_size, n, num_nodes, c_max)
             possible_solution = randperm(num_nodes, n); % generate a random solution/individual
 
             [avgSP, max_sp] = calc_avgSP( G, possible_solution );
-       
-            if max_sp < c_max   % guaranteeing that the shortest path length between any pair of SDN controllers is not higher than c_max
+
+            if max_sp < c_max && max_sp ~= -1 % guaranteeing that the shortest path length between any pair of SDN controllers is not higher than c_max
                 if ~ismember(possible_solution, P, 'rows')  % check if the possible solution isn't already in the population
                     P(i, :) = possible_solution;
                     duplicate = false;
@@ -142,7 +146,7 @@ function [individual] = crossover(G, P, c_max)
         end
 
         [avgSP, max_sp] = calc_avgSP( G, individual );
-        if max_sp < c_max       % verifying if the individual created is valid
+        if max_sp < c_max && max_sp ~= -1      % verifying if the individual created is valid
             valid_individual = true;
         end
 
@@ -160,7 +164,7 @@ function [normalized_fitness] = get_fitness(G, population)
 
     for i = 1:size(population, 1)
         individual = population(i, :);
-        fitness = [ fitness; calc_avgSP(G, individual) ];
+        fitness = [ fitness; 1 / calc_avgSP(G, individual) ];  % an individual has more fitness the lower its avgSP value, so 1/avgSP
     end
 
     normalized_fitness = fitness / sum(fitness);
@@ -203,7 +207,7 @@ function [mutant] = mutation(G, individual, q, num_nodes, c_max)
         
         for i = 1:n
             % check if mutation should occur for this gene
-            if rand() < (q * 3)   % increase the probability of a mutation on a gene (authors' option)
+            if rand() < (q * 2)   % double the probability of a mutation on a gene (authors' option)
                 % generate a random value
                 mutated_gene = randi(num_nodes);
                 
@@ -218,7 +222,7 @@ function [mutant] = mutation(G, individual, q, num_nodes, c_max)
         end
 
         [avgSP, max_sp] = calc_avgSP( G, mutant );
-        if max_sp < c_max       % verifying if the mutant is valid
+        if max_sp < c_max && max_sp ~= -1      % verifying if the mutant is valid
             valid_individual = true;
         end
     end

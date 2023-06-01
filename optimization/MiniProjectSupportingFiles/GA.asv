@@ -62,6 +62,10 @@ for time = 1:10
     [best_solution, best_solution_SP] = get_best_solution(G, current_population);   % get the best solution between all solutions that are in the final population
     all_best_solutions(time) = best_solution_SP;    % save the avg shortest path of the best solution found
 
+    if best_solution_SP == -1
+        best_solution
+    end
+
     execution_time = execution_time + toc;
 
     % save the best solution with the minimum avg shortest path
@@ -104,8 +108,8 @@ function [P] = get_population(G, P_size, n, num_nodes, c_max)
             possible_solution = randperm(num_nodes, n); % generate a random solution/individual
 
             [avgSP, max_sp] = calc_avgSP( G, possible_solution );
-       
-            if max_sp < c_max   % guaranteeing that the shortest path length between any pair of SDN controllers is not higher than c_max
+
+            if max_sp < c_max && max_sp ~= -1 % guaranteeing that the shortest path length between any pair of SDN controllers is not higher than c_max
                 if ~ismember(possible_solution, P, 'rows')  % check if the possible solution isn't already in the population
                     P(i, :) = possible_solution;
                     duplicate = false;
@@ -126,23 +130,23 @@ function [individual] = crossover(G, P, c_max)
     while ~valid_individual
         % 1) parent selection
         fitness = get_fitness(G, P);    % get the fitness of all solutions
-        parents = get_parents(fitness, P);  % get the parents that are actually cro
+        parents = get_parents(fitness, P);  % get the parents that are actually crossover their genes(nodes)
     
         % 2) gene combination
         n = numel(parents(1,:));
-        individual = zeros(1, n);
+        individual = zeros(1, n);   % initialing the son (or daughter :) ) of the parents
         
         for i = 1:n
             % select the allele from either parent with equal probability
             if rand() < 0.5
-                individual(i) = parents(1, i);
+                individual(i) = parents(1, i);  % crossover genes 
             else
-                individual(i) = parents(2, i);
+                individual(i) = parents(2, i);  % crossover genes 
             end
         end
 
         [avgSP, max_sp] = calc_avgSP( G, individual );
-        if max_sp < c_max
+        if max_sp < c_max && max_sp ~= -1      % verifying if the individual created is valid
             valid_individual = true;
         end
 
@@ -154,19 +158,19 @@ function [individual] = crossover(G, P, c_max)
     end
 end
 
-
+% this function returns a normalized fitness of a population
 function [normalized_fitness] = get_fitness(G, population)
     fitness = [];
 
     for i = 1:size(population, 1)
         individual = population(i, :);
-        fitness = [ fitness; calc_avgSP(G, individual) ];
+        fitness = [ fitness; 1 / calc_avgSP(G, individual) ];  % an individual has more fitness the lower its avgSP value, so 1/avgSP
     end
 
     normalized_fitness = fitness / sum(fitness);
 end
 
-
+% function that choose the parents to do the crossover
 function [parents] = get_parents(fitness, P)
     % implementation of Fitness based selection: select each parent with a probability proportional to its fitness
     parents = zeros(2, size(P, 2));
@@ -218,13 +222,13 @@ function [mutant] = mutation(G, individual, q, num_nodes, c_max)
         end
 
         [avgSP, max_sp] = calc_avgSP( G, mutant );
-        if max_sp < c_max
+        if max_sp < c_max && max_sp ~= -1      % verifying if the mutant is valid
             valid_individual = true;
         end
     end
 end
 
-
+% get the best solution between a population
 function [best_solution, min_avgSP] = get_best_solution(G, population)
     n = size(population, 1);
     min_avgSP = 9999999;
