@@ -3,7 +3,7 @@
 % initialize some variables
 c_max = 1000;
 n_servers = 10;
-r = 3;
+r = 4;
 
 % load data
 nodes   = load('Nodes2.txt');
@@ -57,8 +57,6 @@ for time = 1:10
     % save the best solution avg shortest path found
     all_best_solutions(time) = best_solution_SP;
     execution_time = execution_time + elapsedTime;
-
-    best_solution
 
     % save the best solution with the minimum avg shortest path
     if best_solution_SP < min_best_solution_SP

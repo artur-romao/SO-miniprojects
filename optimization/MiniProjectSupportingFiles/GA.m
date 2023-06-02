@@ -207,7 +207,7 @@ function [mutant] = mutation(G, individual, q, num_nodes, c_max)
         
         for i = 1:n
             % check if mutation should occur for this gene
-            if rand() < (q * 2)   % double the probability of a mutation on a gene (authors' option)
+            if rand() < q 
                 % generate a random value
                 mutated_gene = randi(num_nodes);
                 
