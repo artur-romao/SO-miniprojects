@@ -3,7 +3,7 @@
 % initialize some variables
 c_max = 1000;
 n_servers = 10;
-r = 4;
+r = 3;
 
 % load data
 nodes   = load('Nodes2.txt');

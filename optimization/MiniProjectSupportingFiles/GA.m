@@ -3,7 +3,7 @@
 % initialize some variables
 c_max = 1000;
 n_servers = 10;
-q = 0.1;
+q = 0.2;
 P_size = 100;
 
 % load data
