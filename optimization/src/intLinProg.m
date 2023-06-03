@@ -1,43 +1,69 @@
-% Nodes2.txt : Each line is a node, represented by two coordinates x, y.
-% Links2.txt : Each line is a link, represented by two nodes indices i, j that it connects.
-% L2.txt     : Each line is a node, represented by its associated lengths to other nodes.
-
 % Load data
 nodes   = load('Nodes2.txt');
 links   = load('Links2.txt');
 lengths = load('L2.txt');
 
-G   = graph(lengths);
-D   = distances(G);
-N = size(nodes, 1); % number of nodes
-c_max = 1000;
+G     = graph(lengths); % create the graph
+D     = distances(G);   % create the distances matrix
+N     = numnodes(G);    % get the total number of nodes
+n     = 10;             % number of nodes that the solution will have
+c_max = 1000;           % max distance between two server nodes
+fid   = fopen('ILP.lpt', 'wt');
 
-% ILP problem
-f = sum(lengths, 2); % we want to minimize total distance (returns the sum of each row)
-A = []; b = []; % no linear inequalities
-Aeq = ones(1, N); % we need to select exactly n nodes
-beq = 10; % n = 10
-lb = zeros(N, 1); ub = ones(N, 1); % binary decision variables
-intcon = 1:N; % all variables are integer (binary)
+fprintf(fid, 'min\n');
 
-
-
-% Call lpsolve
-lp = mxlpsolve('make_lp', 0, N);
-mxlpsolve('set_obj_fn', lp, f);
-mxlpsolve('add_constraint', lp, Aeq, 'EQ', beq);
-mxlpsolve('add_constraint', lp, A, 'LE', c_max);
-mxlpsolve('set_lowbo', lp, lb);
-mxlpsolve('set_upbo', lp, ub);
-
+% the objective is to minimize this sum
 for i = 1:N
-    mxlpsolve('set_int', lp, i, 1);
+    for j = 1:N
+        fprintf(fid, '+ %d l%d_%d ', D(i,j), i, j);
+    end
 end
 
-mxlpsolve('set_minim', lp);
+fprintf(fid, '\nsubject to\n');
 
-mxlpsolve('solve', lp);
-x = mxlpsolve('get_variables', lp);
+% first constraint: there should be exactly 10 nodes selected
+for i = 1:N
+    fprintf(fid, '+ n%d ', i);
+end
+fprintf(fid, '= %d\n', n);
 
-% Selected nodes are those with x(i) == 1
-selected_nodes = find(x == 1);
+% second constraint: a node can only be connected to a server 
+for i = 1:N
+    for j = 1:N
+        fprintf(fid, '+ l%d_%d ', j, i); 
+    end
+    fprintf(fid, '= 1\n');
+end
+
+% third constraint: do not consider pairs of nodes whose distance overpasses c_max
+for i = 1:N
+    for j = 1:N
+        if D(i, j) > c_max
+            fprintf(fid, 'n%d + n%d <= 1\n', i, j);
+        end
+    end
+end
+
+% fourth constraint: the server assigned to each node must be a server node
+for i = 1:N
+    for j = 1:N
+        fprintf(fid, 'l%d_%d - n%d <= 0\n', i, j, i);
+    end
+end
+
+fprintf(fid, '\nbinary\n');
+
+% each node will be a binary variable
+for i = 1:N
+    fprintf(fid, 'n%d ', i);
+end
+
+% each link will be a binary variable
+for i = 1:N
+    for j = 1:N
+        fprintf(fid, 'l%d_%d ', i, j);
+    end
+end
+
+fprintf(fid, '\nend');
+fclose(fid);
